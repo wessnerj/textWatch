@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="3.0" package="org.wessner.textwatch" version="1.0.0">
+    <author email="tizen@joseph.wessner.org">Joseph Wessner</author>
+    <profile name="wearable"/>
+    <watch-application ambient-support="true" appid="org.wessner.textwatch" exec="textwatch">
+        <label>textwatch</label>
+        <icon>textwatch.png</icon>
+    </watch-application>
+    <privileges>
+        <privilege>http://tizen.org/privilege/healthinfo</privilege>
+        <privilege>http://tizen.org/privilege/appmanager.launch</privilege>
+        <privilege>http://tizen.org/privilege/alarm.set</privilege>
+        <privilege>http://tizen.org/privilege/packagemanager.info</privilege>
+    </privileges>
+    <feature name="http://tizen.org/feature/screen.shape.circle">true</feature>
+    <feature name="http://tizen.org/feature/screen.size.normal.360.360">true</feature>
+</manifest>

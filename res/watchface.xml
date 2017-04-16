@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<watchface device_name="Gear S2, Gear S3" height="360" name="watchface.xml" schema_version="1.2" screen_type="1" version="1.3.2" width="360">
+    <root height="360" type="normal" width="360" x="0" y="0">
+        <background height="360" id="Background_night" name="ch_bg_c_04.png" width="360" x="0" y="0"/>
+        <background height="360" id="Background_morning" name="ch_bg_c_01.png" width="360" x="0" y="0"/>
+        <background height="360" id="Background_day" name="ch_bg_c_02.png" width="360" x="0" y="0"/>
+        <background height="360" id="Background_evening" name="ch_bg_c_03.png" width="360" x="0" y="0"/>
+        
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" 
+        g="255" height="43" id="Text_Intro" r="255" size="36" source="none" style="0" text="Es ist" width="110" x="125" y="14"/>
+        
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" 
+        height="50" id="Text_Prefix" r="255" size="40" source="none" style="0" text="fünf vor halb" width="240" x="60" y="57"/>
+        
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="60" 
+        id="Text_Hour" r="255" size="45" source="none" style="1" text="ZWÖLF" width="182" x="89" y="107"/>
+        
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" 
+        height="40" id="Text_Clock" r="255" size="32" source="none" style="1" text="11:25:30" width="150" x="30" y="167"/>
+        
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Date" r="255" size="32" source="none" style="0" text="Mo, 16.04." width="160" x="180" y="167"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Steps" prefix="Schritte: " r="255" size="22" source="pedometer.step" style="0" text="Text" width="160" x="20" y="207"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Floors" prefix="Stockwerke: " r="255" size="22" source="floor" style="0" text="Text" width="160" x="180" y="207"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Calories" prefix="Kalorien: " r="255" size="22" source="pedometer.calorie" style="0" text="Text" width="140" x="40" y="247"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Pulse" prefix="Puls: " r="255" size="22" source="heartrate.recent" style="0" text="Text" width="140" x="180" y="247"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Water" prefix="Wasser: " r="255" size="22" source="water" style="0" text="Text" width="100" x="80" y="287"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="40" id="Text_Cofe" prefix="Kaffee: " r="255" size="22" source="caffeine" style="0" text="Text" width="100" x="180" y="287"/>
+        <text alignment="16777216" b="255" bitmap_font="false" custom_font="false" font_name="Tizen" g="255" height="30" id="Text_Battery" postfix=" %" prefix="Batterie: " r="255" size="16" source="battery.percent" style="0" text="Text" width="130" x="115" y="327"/>
+    </root>
+</watchface>
