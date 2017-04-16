@@ -34,10 +34,18 @@ typedef struct appdata {
 
 	sensor_listener_h pedometerListener;
 	sensor_listener_h heartrateListener;
+
+	int sumHrmMeasurements;
+	int countHrmMeasurements;
+
+	Ecore_Timer*	hrmTimer;
 } appdata_s;
 
 /// Maximum size of string buffers
 const int TEXT_BUF_SIZE = 256;
+
+/// Number of required heartrate measurements
+const int REQ_HRM_MEASUREMENTS = 40;
 
 /// Names of the different hours
 const char* timeNames[12] = {
@@ -346,9 +354,9 @@ static void pedometer_cb(sensor_h sensor, sensor_event_s *event, void *data)
 	ad->currentStepCount = (int) event->values[0];
 	ad->walkedDistance = event->values[3];
 
-	for (int i = 0; i < event->value_count; ++i) {
-		dlog_print(DLOG_INFO, LOG_TAG, "pedometer_cb> %d -> %f", i, event->values[i]);
-	}
+//	for (int i = 0; i < event->value_count; ++i) {
+//		dlog_print(DLOG_INFO, LOG_TAG, "pedometer_cb> %d -> %f", i, event->values[i]);
+//	}
 }
 
 /**
@@ -368,11 +376,23 @@ static void heartrate_cb(sensor_h sensor, sensor_event_s *event, void *data)
 	}
 
 	// Save current steps
-	ad->currentPulse = (int) event->values[1];
+	if (event->values[0] > 10.f)
+	{
+		++ad->countHrmMeasurements;
+		ad->sumHrmMeasurements += (int) event->values[0];
+	}
 
-	//for (int i = 0; i < event->value_count; ++i) {
-	//	dlog_print(DLOG_INFO, LOG_TAG, "heartrate_cb %d -> %f", i, event->values[i]);
-	//}
+	if (ad->countHrmMeasurements >= REQ_HRM_MEASUREMENTS)
+	{
+		// Set current pulse
+		ad->currentPulse = ad->sumHrmMeasurements / ad->countHrmMeasurements;
+
+		// Unregister listener
+		int ret = sensor_listener_stop(ad->heartrateListener);
+		if (ret != SENSOR_ERROR_NONE) {
+			dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
+		}
+	}
 }
 
 static void register_pedometer_listener(appdata_s *ad)
@@ -431,11 +451,6 @@ static void start_listeners(appdata_s *ad)
 	if (ret != SENSOR_ERROR_NONE) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_start() error: %s", __FILE__, __LINE__, get_error_message(ret));
 	}
-
-	ret = sensor_listener_start(ad->heartrateListener);
-	if (ret != SENSOR_ERROR_NONE) {
-		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_start() error: %s", __FILE__, __LINE__, get_error_message(ret));
-	}
 }
 
 static void stop_listeners(appdata_s *ad)
@@ -447,16 +462,34 @@ static void stop_listeners(appdata_s *ad)
 		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
 	}
 
-	ret = sensor_listener_stop(ad->heartrateListener);
-	if (ret != SENSOR_ERROR_NONE) {
-		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
-	}
+//	ret = sensor_listener_stop(ad->heartrateListener);
+//	if (ret != SENSOR_ERROR_NONE) {
+//		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
+//	}
 }
 
 static void register_sensor_listeners(appdata_s *ad)
 {
 	register_pedometer_listener(ad);
 	register_heartrate_listener(ad);
+}
+
+static Eina_Bool start_heartrate_measurement(void* data)
+{
+	appdata_s* ad = data;
+
+	dlog_print(DLOG_INFO, LOG_TAG, "start_heartrate_measurement");
+
+	// Reset data
+	ad->countHrmMeasurements = ad->sumHrmMeasurements = 0;
+
+	// Start listening to HRM
+	int ret = sensor_listener_start(ad->heartrateListener);
+	if (ret != SENSOR_ERROR_NONE) {
+		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_start() error: %s", __FILE__, __LINE__, get_error_message(ret));
+	}
+
+	return ECORE_CALLBACK_RENEW;
 }
 
 static bool app_create(int width, int height, void *data)
@@ -472,6 +505,14 @@ static bool app_create(int width, int height, void *data)
 
 	// Init sensor listeners
 	register_sensor_listeners(ad);
+
+	// Start with HRM
+	start_heartrate_measurement(ad);
+
+	// Check pulse every 30min
+	ad->hrmTimer = ecore_timer_add(30. * 60.,
+			start_heartrate_measurement,
+			(void*) ad);
 
 	return true;
 }
