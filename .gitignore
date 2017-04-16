@@ -31,3 +31,18 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Tizen files
+*.tkp
+*.cs
+
+.cproject
+Debug/
+.exportMap
+.package-stamp
+.project
+.rds_delta
+project_def.prop
+.sdk_delta.info
+.sign
+.tproject
