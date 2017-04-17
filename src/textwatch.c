@@ -74,6 +74,30 @@ const char* dayNames[7] = {
 		"Sa"
 };
 
+/// Mapping
+typedef struct hourMapping_ {
+	const int maxMinute; // (exclusive)
+	const int hourIncrement;
+	const char* prefixString;
+} hourMapping_;
+
+const int numOfHourMappingElems = 13;
+const hourMapping_ hourMapping[numOfHourMappingElems] = {
+		{ 3, 0, "genau"},
+		{ 8, 0, "fünf nach"},
+		{13, 0, "zehn nach"},
+		{18, 0, "viertel nach"},
+		{23, 0, "zwanzig nach"},
+		{28, 1, "fünf vor halb"},
+		{33, 1, "halb"},
+		{38, 1, "fünf nach halb"},
+		{43, 1, "zwanzig vor"},
+		{48, 1, "dreiviertel"},
+		{53, 1, "zehn vor"},
+		{58, 1, "fünf vor"},
+		{63, 1, "genau"}
+};
+
 /*
  * @brief Get path of resource.
  * @param[in] file_in File name
@@ -159,66 +183,15 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	watch_time_get_year(watch_time, &year);
 
 	// Get the time prefix string
-	char* prefixStr;
-	if (minute < 3)
+	const char* prefixStr = "";
+	for (int i = 0; i < numOfHourMappingElems; ++i)
 	{
-		prefixStr = "genau";
-	}
-	else if (minute < 8)
-	{
-		prefixStr = "fünf nach";
-	}
-	else if (minute < 13)
-	{
-		prefixStr = "zehn nach";
-	}
-	else if (minute < 18)
-	{
-		prefixStr = "viertel nach";
-	}
-	else if (minute < 23)
-	{
-		prefixStr = "zwanzig nach";
-	}
-	else if (minute < 28)
-	{
-		prefixStr = "fünf vor halb";
-		++hour12;
-	}
-	else if (minute < 33)
-	{
-		prefixStr = "halb";
-		++hour12;
-	}
-	else if (minute < 38)
-	{
-		prefixStr = "fünf nach halb";
-		++hour12;
-	}
-	else if (minute < 43)
-	{
-		prefixStr = "zwanzig vor";
-		++hour12;
-	}
-	else if (minute < 48)
-	{
-		prefixStr = "dreiviertel";
-		++hour12;
-	}
-	else if (minute < 53)
-	{
-		prefixStr = "zehn vor";
-		++hour12;
-	}
-	else if (minute < 58)
-	{
-		prefixStr = "fünf vor";
-		++hour12;
-	}
-	else
-	{
-		prefixStr = "genau";
-		++hour12;
+		if (minute < hourMapping[i].maxMinute)
+		{
+			prefixStr = hourMapping[i].prefixString;
+			hour12 += hourMapping[i].hourIncrement;
+			break;
+		}
 	}
 
 	// Take care of the special case, where we added one to 12 o'clock ..
@@ -226,12 +199,12 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 		hour12 -= 12;
 
 	// Set the time prefix text
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Bold font_size=36>%s</font></align>",
+	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Bold font_size=42>%s</font></align>",
 			prefixStr);
 	elm_object_text_set(ad->Text_Prefix, watch_text);
 
 	// Set the hour
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Bold font_size=42>%s</font></align>",
+	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Bold font_size=46>%s</font></align>",
 			timeNames[hour12]);
 	elm_object_text_set(ad->Text_Hour, watch_text);
 
@@ -318,7 +291,7 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Prefix, 240, 50);
 	evas_object_move(ad->Text_Prefix, 60, currY);
 	evas_object_show(ad->Text_Prefix);
-	elm_object_text_set(ad->Text_Prefix, "<align=center><font=Tizen:style=Regular font_size=36>fünf vor halb</font></align>");
+	elm_object_text_set(ad->Text_Prefix, "<align=center><font=Tizen:style=Regular font_size=42>fünf nach halb</font></align>");
 	currY += 50;
 
 	// Label for the current hour
@@ -326,7 +299,7 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Hour, 182, 60);
 	evas_object_move(ad->Text_Hour, 89, currY);
 	evas_object_show(ad->Text_Hour);
-	elm_object_text_set(ad->Text_Hour, "<align=center><font=Tizen:style=Regular font_size=42>ZWÖLF</font></align>");
+	elm_object_text_set(ad->Text_Hour, "<align=center><font=Tizen:style=Regular font_size=46>SIEBEN</font></align>");
 	currY += 60;
 
 	// Label for digital time & date
@@ -342,7 +315,7 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Steps, 280, 40);
 	evas_object_move(ad->Text_Steps, 40, currY);
 	evas_object_show(ad->Text_Steps);
-	elm_object_text_set(ad->Text_Steps, "<align=center><font=Tizen:style=Regular font_size=28>Steps: 0 (0.0 km)</font></align>");
+	elm_object_text_set(ad->Text_Steps, "<align=center><font=Tizen:style=Regular font_size=28>Steps: 0 (0,0 km)</font></align>");
 	currY += 40;
 
 	// Label for pulse count
