@@ -387,6 +387,8 @@ static void heartrate_cb(sensor_h sensor, sensor_event_s *event, void *data)
 		// Set current pulse
 		ad->currentPulse = ad->sumHrmMeasurements / ad->countHrmMeasurements;
 
+		dlog_print(DLOG_INFO, LOG_TAG, "Save current pulse: %d", ad->currentPulse);
+
 		// Unregister listener
 		int ret = sensor_listener_stop(ad->heartrateListener);
 		if (ret != SENSOR_ERROR_NONE) {
@@ -506,6 +508,9 @@ static bool app_create(int width, int height, void *data)
 	// Init sensor listeners
 	register_sensor_listeners(ad);
 
+	// Start listenes
+	start_listeners(ad);
+
 	// Start with HRM
 	start_heartrate_measurement(ad);
 
@@ -527,20 +532,21 @@ static void
 app_pause(void *data)
 {
 	/* Take necessary actions when application becomes invisible. */
-	stop_listeners(data);
+	// stop_listeners(data);
 }
 
 static void
 app_resume(void *data)
 {
 	/* Take necessary actions when application becomes visible. */
-	start_listeners(data);
+	// start_listeners(data);
 }
 
 static void
 app_terminate(void *data)
 {
 	/* Release all resources. */
+	stop_listeners(data);
 }
 
 static void
