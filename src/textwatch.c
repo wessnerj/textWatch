@@ -11,8 +11,6 @@ typedef struct appdata {
 	Evas_Object *win;
 	Evas_Object *conform;
 
-	Evas_Object *background;
-
 	Evas_Object *Text_Intro;
 	Evas_Object *Text_Prefix;
 	Evas_Object *Text_Hour;
@@ -24,6 +22,8 @@ typedef struct appdata {
 	Evas_Object *Text_Pulse;
 
 	Evas_Object *Text_Battery;
+
+	int currentBackground;
 
 	/// Number is walked steps
 	int currentStepCount;
@@ -87,6 +87,50 @@ static void data_get_resource_path(const char *file_in, char *file_path_out, int
 		snprintf(file_path_out, file_path_max, "%s%s", res_path, file_in);
 		free(res_path);
 	}
+}
+
+static void update_background(appdata_s *ad, int hour)
+{
+	char* imageName;
+	int newBackground;
+	if (hour > 20 || hour < 3)
+	{
+		// Use night background
+		imageName = "ch_bg_c_04.png";
+		newBackground = 4;
+	}
+	else if (hour < 9)
+	{
+		// Use morning background
+		imageName = "ch_bg_c_01.png";
+		newBackground = 1;
+	}
+	else if (hour < 15)
+	{
+		// Use midday background
+		imageName = "ch_bg_c_02.png";
+		newBackground = 2;
+	}
+	else
+	{
+		// Use afternoon background
+		imageName = "ch_bg_c_03.png";
+		newBackground = 3;
+	}
+
+	if (ad->currentBackground == newBackground)
+	{
+		// nothing to do
+		return;
+	}
+
+	// Get image path
+	char bg_path[4096];
+	data_get_resource_path(imageName, bg_path, sizeof(bg_path));
+
+	// Set image
+	elm_bg_file_set(ad->conform, bg_path, NULL);
+	ad->currentBackground = newBackground;
 }
 
 static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
@@ -223,6 +267,9 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Batterie: %d%%</font></align>",
 		bat);
 	elm_object_text_set(ad->Text_Battery, watch_text);
+
+	// Update background
+	update_background(ad, hour24);
 }
 
 static void create_base_gui(appdata_s *ad, int width, int height)
@@ -239,27 +286,21 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	}
 	evas_object_resize(ad->win, width, height);
 
-	// Create conformant
-	ad->conform = elm_conformant_add(ad->win);
-	evas_object_size_hint_weight_set(ad->conform, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	elm_win_resize_object_add(ad->win, ad->conform);
-	evas_object_show(ad->conform);
-
-	// Create backgroud
+	// Create conformant as background :)
 	char bg_path[4096];
 	data_get_resource_path("ch_bg_c_04.png", bg_path, sizeof(bg_path));
-	dlog_print(DLOG_ERROR, "sensors", "bg_path = %s", bg_path);
 
-	ad->background = elm_bg_add(ad->conform);
-	ret = elm_bg_file_set(ad->background, bg_path, NULL);
+	ad->conform = elm_bg_add(ad->win);
+	ret = elm_bg_file_set(ad->conform, bg_path, NULL);
 	if (ret != APP_ERROR_NONE) {
-		dlog_print(DLOG_ERROR, "sensors", "failed to set background. err = %d", ret);
+		dlog_print(DLOG_ERROR, LOG_TAG, "failed to set background. err = %d", ret);
 	}
 
-	elm_bg_option_set(ad->background, ELM_BG_OPTION_STRETCH);
-	evas_object_size_hint_weight_set(ad->background, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	elm_win_resize_object_add(ad->conform, ad->background);
-	evas_object_show(ad->background);
+	elm_bg_option_set(ad->conform, ELM_BG_OPTION_CENTER);
+
+	evas_object_move(ad->conform, 0, 0);
+	evas_object_resize(ad->conform, width, height);
+	evas_object_show(ad->conform);
 
 	// Keep track of the current y position
 	int currY = 15;
