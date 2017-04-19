@@ -288,8 +288,8 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 
 	// Label for the time prefix
 	ad->Text_Prefix = elm_label_add(ad->conform);
-	evas_object_resize(ad->Text_Prefix, 240, 50);
-	evas_object_move(ad->Text_Prefix, 60, currY);
+	evas_object_resize(ad->Text_Prefix, 260, 50);
+	evas_object_move(ad->Text_Prefix, 50, currY);
 	evas_object_show(ad->Text_Prefix);
 	elm_object_text_set(ad->Text_Prefix, "<align=center><font=Tizen:style=Regular font_size=42>fünf nach halb</font></align>");
 	currY += 50;
