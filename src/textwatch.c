@@ -211,16 +211,16 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	// Set the digital time & date ..
 	if (!ambient)
 	{
-		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=32>%02d:%02d:%02d, %2s, %02d.%02d.%04d</font></align>",
-			hour24, minute, second,
-			dayNames[dayOfWeek], dayOfMonth, month, year);
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=32>%2s, %02d.%02d.%04d, %02d:%02d:%02d</font></align>",
+			dayNames[dayOfWeek], dayOfMonth, month, year,
+			hour24, minute, second);
 	}
 	else
 	{
 		// In ambient mode we skip the seconds ..
-		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=32>%02d:%02d, %2s, %02d.%02d.%04d</font></align>",
-				hour24, minute,
-				dayNames[dayOfWeek], dayOfMonth, month, year);
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=32>%2s, %02d.%02d.%04d, %02d:%02d</font></align>",
+				dayNames[dayOfWeek], dayOfMonth, month, year,
+				hour24, minute);
 	}
 	elm_object_text_set(ad->Text_Clock, watch_text);
 
@@ -307,7 +307,7 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Clock, 360, 40);
 	evas_object_move(ad->Text_Clock, 0, currY);
 	evas_object_show(ad->Text_Clock);
-	elm_object_text_set(ad->Text_Clock, "<align=center><font=Tizen:style=Regular font_size=32>11:25:30 Mo, 01.01.2001</font></align>");
+	elm_object_text_set(ad->Text_Clock, "<align=center><font=Tizen:style=Regular font_size=32>Mo, 01.01.2001, 11:25:30</font></align>");
 	currY += 40;
 
 	// Label for Step count
