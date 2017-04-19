@@ -237,7 +237,7 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	// Set the battery data
 	int bat;
 	device_battery_get_percent(&bat);
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Batterie: %d%%</font></align>",
+	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Akku: %d%%</font></align>",
 		bat);
 	elm_object_text_set(ad->Text_Battery, watch_text);
 
@@ -331,7 +331,7 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Battery, 180, 40);
 	evas_object_move(ad->Text_Battery, 90, currY);
 	evas_object_show(ad->Text_Battery);
-	elm_object_text_set(ad->Text_Battery, "<align=center><font=Tizen:style=Regular font_size=28>Batterie: 100%</font></align>");
+	elm_object_text_set(ad->Text_Battery, "<align=center><font=Tizen:style=Regular font_size=28>Akku: 100%</font></align>");
 	currY += 40;
 
 	// Call update_watch to have the right time right at start-up:
