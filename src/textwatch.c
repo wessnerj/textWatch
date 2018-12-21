@@ -4,6 +4,7 @@
 #include <dlog.h>
 
 #include <string.h>
+#include <time.h>
 
 #include "textwatch.h"
 
@@ -25,10 +26,15 @@ typedef struct appdata {
 
 	int currentBackground;
 
+	int currentDayOfWeek;
+	int pedometerDayOfWeek;
+
 	/// Number is walked steps
 	int currentStepCount;
+	int stepOffset;
 	/// Walked distance [m]
 	float walkedDistance;
+	float walkedDistanceOffset;
 	/// Current pulse [rpm]
 	int currentPulse;
 
@@ -157,6 +163,48 @@ static void update_background(appdata_s *ad, int hour)
 	ad->currentBackground = newBackground;
 }
 
+static void get_week_of_year(watch_time_h watch_time, int* woy)
+{
+	// Get day of the year
+	int day_of_year = 0;
+	int month, year, dayOfMonth;
+	watch_time_get_year(watch_time, &year);
+	watch_time_get_month(watch_time, &month);
+	watch_time_get_day(watch_time, &dayOfMonth);
+	for (int i = 1; i < month; i++) {
+		switch (i) {
+		case 1:
+		case 3:
+		case 5:
+		case 7:
+		case 8:
+		case 10:
+		case 12:
+			day_of_year += 31;
+			break;
+		case 4:
+		case 6:
+		case 9:
+		case 11:
+			day_of_year += 30;
+			break;
+		default:
+			break;
+		}
+	}
+	// Special treatment for February
+	if (month > 2) {
+		if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) {
+			day_of_year += 29;
+		} else {
+			day_of_year += 28;
+		}
+	}
+	day_of_year += dayOfMonth;
+
+	*woy = ((day_of_year + 6) / 7);
+}
+
 static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 {
 	// Return immediatly if no time is given
@@ -178,6 +226,7 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	watch_time_get_day_of_week(watch_time, &dayOfWeek);
 	// decrement by one (watch_time_get_day_of_week starts counting with 1 .. -.-)
 	--dayOfWeek;
+	ad->currentDayOfWeek = dayOfWeek;
 	watch_time_get_day(watch_time, &dayOfMonth);
 	watch_time_get_month(watch_time, &month);
 	watch_time_get_year(watch_time, &year);
@@ -234,11 +283,18 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 		ad->currentPulse);
 	elm_object_text_set(ad->Text_Pulse, watch_text);
 
-	// Set the battery data
-	int bat;
-	device_battery_get_percent(&bat);
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Akku: %d%%</font></align>",
-		bat);
+//	// Set the battery data
+//	int bat;
+//	device_battery_get_percent(&bat);
+//	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Akku: %d%%</font></align>",
+//		bat);
+//	elm_object_text_set(ad->Text_Battery, watch_text);
+
+	// Set the Week of the year
+	int woy;
+	get_week_of_year(watch_time, &woy);
+	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>KW: %d</font></align>",
+		woy);
 	elm_object_text_set(ad->Text_Battery, watch_text);
 
 	// Update background
@@ -362,11 +418,19 @@ static void pedometer_cb(sensor_h sensor, sensor_event_s *event, void *data)
 		return;
 	}
 
+	// Reset counter if day changed
+	if (ad->currentDayOfWeek != ad->pedometerDayOfWeek) {
+		ad->pedometerDayOfWeek = ad->currentDayOfWeek;
+
+		ad->stepOffset = (int) event->values[0];
+		ad->walkedDistanceOffset = event->values[3];
+	}
+
 	// Save current steps:
 	// 0: Number of steps of current day
 	// 3: Walked distance [m]
-	ad->currentStepCount = (int) event->values[0];
-	ad->walkedDistance = event->values[3];
+	ad->currentStepCount = (int) event->values[0] + ad->stepOffset;
+	ad->walkedDistance = event->values[3] + ad->walkedDistanceOffset;
 
 //	for (int i = 0; i < event->value_count; ++i) {
 //		dlog_print(DLOG_INFO, LOG_TAG, "pedometer_cb> %d -> %f", i, event->values[i]);
@@ -606,6 +670,11 @@ int main(int argc, char *argv[])
 {
 	appdata_s ad = {0,};
 	int ret = 0;
+
+	ad.currentDayOfWeek = 0;
+	ad.pedometerDayOfWeek = 9;
+	ad.stepOffset = 0;
+	ad.walkedDistanceOffset = 0.f;
 
 	watch_app_lifecycle_callback_s event_callback = {0,};
 	app_event_handler_h handlers[5] = {NULL, };
