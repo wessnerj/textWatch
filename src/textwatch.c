@@ -2,11 +2,17 @@
 #include <sensor.h>
 #include <device/battery.h>
 #include <dlog.h>
+#include <system_settings.h>
 
 #include <string.h>
 #include <time.h>
 
 #include "textwatch.h"
+
+enum Language {
+	GERMAN = 1,
+	ENGLISH = 2
+};
 
 typedef struct appdata {
 	Evas_Object *win;
@@ -22,7 +28,9 @@ typedef struct appdata {
 
 	Evas_Object *Text_Pulse;
 
-	Evas_Object *Text_Battery;
+	Evas_Object *Text_CW;
+
+	enum Language lang;
 
 	int currentBackground;
 
@@ -54,7 +62,7 @@ const int TEXT_BUF_SIZE = 256;
 const int REQ_HRM_MEASUREMENTS = 40;
 
 /// Names of the different hours
-const char* timeNames[12] = {
+const char* timeNamesDE[12] = {
 		"ZWÖLF",
 		"EINS",
 		"ZWEI",
@@ -68,9 +76,23 @@ const char* timeNames[12] = {
 		"ZEHN",
 		"ELF"
 };
+const char* timeNamesEN[12] = {
+		"TWELVE",
+		"ONE",
+		"TWO",
+		"THREE",
+		"FOUR",
+		"FIVE",
+		"SIX",
+		"SEVEN",
+		"EIGHT",
+		"NINE",
+		"TEN",
+		"ELEVEN"
+};
 
 /// Short names of weekdays
-const char* dayNames[7] = {
+const char* dayNamesDE[7] = {
 		"So",
 		"Mo",
 		"Di",
@@ -78,6 +100,15 @@ const char* dayNames[7] = {
 		"Do",
 		"Fr",
 		"Sa"
+};
+const char* dayNamesEN[7] = {
+		"Sun",
+		"Mon",
+		"Tue",
+		"Wed",
+		"Thu",
+		"Fri",
+		"Sat"
 };
 
 /// Mapping
@@ -88,7 +119,7 @@ typedef struct hourMapping_ {
 } hourMapping_;
 
 const int numOfHourMappingElems = 13;
-const hourMapping_ hourMapping[numOfHourMappingElems] = {
+const hourMapping_ hourMappingDE[numOfHourMappingElems] = {
 		{ 3, 0, "genau"},
 		{ 8, 0, "fünf nach"},
 		{13, 0, "zehn nach"},
@@ -102,6 +133,21 @@ const hourMapping_ hourMapping[numOfHourMappingElems] = {
 		{53, 1, "zehn vor"},
 		{58, 1, "fünf vor"},
 		{63, 1, "genau"}
+};
+const hourMapping_ hourMappingEN[numOfHourMappingElems] = {
+		{ 3, 0, "exactly"},
+		{ 8, 0, "five past"},
+		{13, 0, "ten past"},
+		{18, 0, "quarter past"},
+		{23, 0, "twenty past"},
+		{28, 0, "25 past"},
+		{33, 0, "half past"},
+		{38, 1, "25 to"},
+		{43, 1, "twenty to"},
+		{48, 1, "quarter to"},
+		{53, 1, "ten to"},
+		{58, 1, "five to"},
+		{63, 1, "exaclty"}
 };
 
 /*
@@ -232,6 +278,10 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	watch_time_get_year(watch_time, &year);
 
 	// Get the time prefix string
+	const hourMapping_* hourMapping = hourMappingEN;
+	if (GERMAN == ad->lang) {
+		hourMapping = hourMappingDE;
+	}
 	const char* prefixStr = "";
 	for (int i = 0; i < numOfHourMappingElems; ++i)
 	{
@@ -253,11 +303,19 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	elm_object_text_set(ad->Text_Prefix, watch_text);
 
 	// Set the hour
+	const char** timeNames = timeNamesEN;
+	if (GERMAN == ad->lang) {
+		timeNames = timeNamesDE;
+	}
 	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Bold font_size=46>%s</font></align>",
 			timeNames[hour12]);
 	elm_object_text_set(ad->Text_Hour, watch_text);
 
 	// Set the digital time & date ..
+	const char** dayNames = dayNamesEN;
+	if (GERMAN == ad->lang) {
+		dayNames = dayNamesDE;
+	}
 	if (!ambient)
 	{
 		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=32>%2s, %02d.%02d.%04d, %02d:%02d:%02d</font></align>",
@@ -274,13 +332,23 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	elm_object_text_set(ad->Text_Clock, watch_text);
 
 	// Set the step count
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Schritte: %d (%.1f km)</font></align>",
-		ad->currentStepCount, (.001f * ad->walkedDistance));
+	if (GERMAN == ad->lang) {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Schritte: %d (%.1f km)</font></align>",
+				ad->currentStepCount, (.001f * ad->walkedDistance));
+	} else {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Steps: %d (%.1f km)</font></align>",
+						ad->currentStepCount, (.001f * ad->walkedDistance));
+	}
 	elm_object_text_set(ad->Text_Steps, watch_text);
 
 	// Set the pulse data
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Puls: %d/min</font></align>",
-		ad->currentPulse);
+	if (GERMAN == ad->lang) {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Puls: %d/min</font></align>",
+				ad->currentPulse);
+	} else {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>Pulse: %d/min</font></align>",
+						ad->currentPulse);
+	}
 	elm_object_text_set(ad->Text_Pulse, watch_text);
 
 //	// Set the battery data
@@ -293,9 +361,14 @@ static void update_watch(appdata_s *ad, watch_time_h watch_time, int ambient)
 	// Set the Week of the year
 	int woy;
 	get_week_of_year(watch_time, &woy);
-	snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>KW: %d</font></align>",
-		woy);
-	elm_object_text_set(ad->Text_Battery, watch_text);
+	if (GERMAN == ad->lang) {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>KW: %d</font></align>",
+				woy);
+	} else {
+		snprintf(watch_text, TEXT_BUF_SIZE, "<align=center><font=Tizen:style=Regular font_size=28>CW: %d</font></align>",
+				woy);
+	}
+	elm_object_text_set(ad->Text_CW, watch_text);
 
 	// Update background
 	update_background(ad, hour24);
@@ -339,7 +412,11 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	evas_object_resize(ad->Text_Intro, 110, 40);
 	evas_object_move(ad->Text_Intro, 125, currY);
 	evas_object_show(ad->Text_Intro);
-	elm_object_text_set(ad->Text_Intro, "<align=center><font=Tizen:style=Regular font_size=36>Es ist</font></align>");
+	if (GERMAN == ad->lang) {
+		elm_object_text_set(ad->Text_Intro, "<align=center><font=Tizen:style=Regular font_size=36>Es ist</font></align>");
+	} else {
+		elm_object_text_set(ad->Text_Intro, "<align=center><font=Tizen:style=Regular font_size=36>It's</font></align>");
+	}
 	currY += 40;
 
 	// Label for the time prefix
@@ -382,12 +459,12 @@ static void create_base_gui(appdata_s *ad, int width, int height)
 	elm_object_text_set(ad->Text_Pulse, "<align=center><font=Tizen:style=Regular font_size=28>Pulse: 0</font></align>");
 	currY += 40;
 
-	// Label for battery status
-	ad->Text_Battery = elm_label_add(ad->conform);
-	evas_object_resize(ad->Text_Battery, 180, 40);
-	evas_object_move(ad->Text_Battery, 90, currY);
-	evas_object_show(ad->Text_Battery);
-	elm_object_text_set(ad->Text_Battery, "<align=center><font=Tizen:style=Regular font_size=28>Akku: 100%</font></align>");
+	// Label for calendar week
+	ad->Text_CW = elm_label_add(ad->conform);
+	evas_object_resize(ad->Text_CW, 180, 40);
+	evas_object_move(ad->Text_CW, 90, currY);
+	evas_object_show(ad->Text_CW);
+	elm_object_text_set(ad->Text_CW, "<align=center><font=Tizen:style=Regular font_size=28>CW: 100%</font></align>");
 	currY += 40;
 
 	// Call update_watch to have the right time right at start-up:
@@ -541,11 +618,6 @@ static void stop_listeners(appdata_s *ad)
 	if (ret != SENSOR_ERROR_NONE) {
 		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
 	}
-
-//	ret = sensor_listener_stop(ad->heartrateListener);
-//	if (ret != SENSOR_ERROR_NONE) {
-//		dlog_print(DLOG_ERROR, LOG_TAG, "[%s:%d] sensor_listener_stop() error: %s", __FILE__, __LINE__, get_error_message(ret));
-//	}
 }
 
 static void register_sensor_listeners(appdata_s *ad)
@@ -652,10 +724,19 @@ app_ambient_changed(bool ambient_mode, void *data)
 static void
 watch_app_lang_changed(app_event_info_h event_info, void *user_data)
 {
+	appdata_s *ad = user_data;
+
 	/*APP_EVENT_LANGUAGE_CHANGED*/
 	char *locale = NULL;
 	app_event_get_language(event_info, &locale);
 	elm_language_set(locale);
+
+	if (locale[0] == 'd' && locale[1] == 'e') {
+		ad->lang = GERMAN;
+	} else {
+		ad->lang = ENGLISH;
+	}
+
 	free(locale);
 	return;
 }
@@ -669,6 +750,17 @@ watch_app_region_changed(app_event_info_h event_info, void *user_data)
 int main(int argc, char *argv[])
 {
 	appdata_s ad = {0,};
+
+	// Get the system language
+	char* locale = NULL;
+    system_settings_get_value_string(SYSTEM_SETTINGS_KEY_LOCALE_LANGUAGE, &locale);
+    if (locale[0] == 'd' && locale[1] == 'e') {
+    	ad.lang = GERMAN;
+    } else {
+    	ad.lang = ENGLISH;
+    }
+    free(locale);
+
 	int ret = 0;
 
 	ad.currentDayOfWeek = 0;
